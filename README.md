@@ -46,20 +46,94 @@ Claude Code logs API calls to JSONL transcripts, but these logs capture usage sn
 
 claudeoo intercepts the full SSE stream end-to-end and captures the authoritative final usage numbers so you know exactly what you're spending.
 
----
-
 ## Features
 
-- **Accurate token counts**  captures final usage from completed SSE streams, not mid-stream snapshots
-- **Real-time cost tracking**  live cost updates in your terminal tab title as tokens stream
-- **Per-turn breakdowns**  input, output, cache read/write tokens for every API call
-- **Content type tracking**  thinking, text, and tool_use character counts
-- **Session reports**  detailed JSON reports saved automatically after each session
-- **Full API logs**  raw request/response logging for debugging
-- **Auto-updated pricing**  fetches latest model pricing from Anthropic's docs on every startup
-- **SQLite + JSONL storage**  queryable database with JSONL backup
-- **CLI queries**  stats, sessions, export commands to analyze your usage
-- **Zero runtime dependencies**  uses Node.js built-in `node:sqlite`
+  <table>
+  <thead>
+  <tr>
+  <th>Feature</th>
+  <th>claudeoo</th>
+  <th>ccusage</th>
+  <th>cccost</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+  <td><b>Accurate output tokens</b></td>
+  <td>✅ Final SSE event</td>
+  <td>❌ Mid-stream*</td>
+  <td>✅ Final SSE event</td>
+  </tr>
+  <tr>
+  <td><b>Real-time tracking</b></td>
+  <td>✅</td>
+  <td>❌ Post-hoc only</td>
+  <td>✅</td>
+  </tr>
+  <tr>
+  <td><b>Per-turn breakdowns</b></td>
+  <td>✅</td>
+  <td>❌</td>
+  <td>❌</td>
+  </tr>
+  <tr>
+  <td><b>Query CLI</b></td>
+  <td>✅ stats / sessions / export</td>
+  <td>✅ daily / monthly / session</td>
+  <td>❌</td>
+  </tr>
+  <tr>
+  <td><b>SQLite storage</b></td>
+  <td>✅</td>
+  <td>❌</td>
+  <td>❌</td>
+  </tr>
+  <tr>
+  <td><b>Full API logs</b></td>
+  <td>✅</td>
+  <td>❌</td>
+  <td>❌</td>
+  </tr>
+  <tr>
+  <td><b>Session reports</b></td>
+  <td>✅</td>
+  <td>❌</td>
+  <td>❌</td>
+  </tr>
+  <tr>
+  <td><b>Auto-updated pricing</b></td>
+  <td>✅</td>
+  <td>❌ Hardcoded</td>
+  <td>❌ Hardcoded</td>
+  </tr>
+  <tr>
+  <td><b>Content type tracking</b></td>
+  <td>✅ thinking / text / tool_use</td>
+  <td>❌</td>
+  <td>❌</td>
+  </tr>
+  <tr>
+  <td><b>CSV / JSON export</b></td>
+  <td>✅</td>
+  <td>✅ JSON only</td>
+  <td>❌</td>
+  </tr>
+  <tr>
+  <td><b>Zero dependencies</b></td>
+  <td>✅</td>
+  <td>❌</td>
+  <td>✅</td>
+  </tr>
+  <tr>
+  <td><b>Drop-in replacement</b></td>
+  <td>✅</td>
+  <td>✅</td>
+  <td>✅</td>
+  </tr>
+  </tbody>
+  </table>
+
+  > \*ccusage reads Claude's built-in JSONL logs which capture usage snapshots mid-stream — before the final `message_delta` arrives — resulting in undercounted output tokens.
 
 ---
 
