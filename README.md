@@ -1,12 +1,11 @@
 <div align="center">
   <div align="center">
-    <img width="220px" src="screenshots/logo.png" alt="claudeoo logo">
+    <img width="320px" src="screenshots/logo.png" alt="claudeoo logo">
   </div>
 
   <p>
-    Accurate token usage & cost tracker for
-    <a href="https://docs.anthropic.com/en/docs/claude-code">Claude Code</a>.<br>
-    Claude Code's built-in tracking undercounts output tokens by ~2x —
+    Accurate token usage & cost tracker for Claude Code <br>
+    Claude Code's built-in tracking undercounts output tokens by ~2x
     <b>claudeoo</b> captures the real numbers.
   </p>
 
@@ -36,28 +35,28 @@
 
 ## Why claudeoo?
 
-Claude Code logs API calls to JSONL transcripts, but these logs capture usage snapshots **mid-stream** — before the final `message_delta` event arrives. This means:
+Claude Code logs API calls to JSONL transcripts, but these logs capture usage snapshots **mid-stream** before the final `message_delta` event arrives. This means:
 
 - **Output tokens are undercounted** by roughly 2x
 - **`stop_reason` is always `null`** in the logs (never captured)
 - **Cache tokens may be incomplete**
 
-claudeoo intercepts the full SSE stream end-to-end and captures the authoritative final usage numbers — so you know exactly what you're spending.
+claudeoo intercepts the full SSE stream end-to-end and captures the authoritative final usage numbers so you know exactly what you're spending.
 
 ---
 
 ## Features
 
-- **Accurate token counts** — captures final usage from completed SSE streams, not mid-stream snapshots
-- **Real-time cost tracking** — live cost updates in your terminal tab title as tokens stream
-- **Per-turn breakdowns** — input, output, cache read/write tokens for every API call
-- **Content type tracking** — thinking, text, and tool_use character counts
-- **Session reports** — detailed JSON reports saved automatically after each session
-- **Full API logs** — raw request/response logging for debugging
-- **Auto-updated pricing** — fetches latest model pricing from Anthropic's docs on every startup
-- **SQLite + JSONL storage** — queryable database with JSONL backup
-- **CLI queries** — stats, sessions, export commands to analyze your usage
-- **Zero runtime dependencies** — uses Node.js built-in `node:sqlite`
+- **Accurate token counts**  captures final usage from completed SSE streams, not mid-stream snapshots
+- **Real-time cost tracking**  live cost updates in your terminal tab title as tokens stream
+- **Per-turn breakdowns**  input, output, cache read/write tokens for every API call
+- **Content type tracking**  thinking, text, and tool_use character counts
+- **Session reports**  detailed JSON reports saved automatically after each session
+- **Full API logs**  raw request/response logging for debugging
+- **Auto-updated pricing**  fetches latest model pricing from Anthropic's docs on every startup
+- **SQLite + JSONL storage**  queryable database with JSONL backup
+- **CLI queries**  stats, sessions, export commands to analyze your usage
+- **Zero runtime dependencies**  uses Node.js built-in `node:sqlite`
 
 ---
 
@@ -88,7 +87,7 @@ npm link
 
 ## Usage
 
-Use `claudeoo` exactly like you use `claude` — all arguments are passed through:
+Use `claudeoo` exactly like you use `claude`  all arguments are passed through:
 
 ```bash
 # Interactive session
@@ -212,7 +211,7 @@ All data is stored in `~/.claudeoo/`:
 
 ---
 
-## Pricing
+## Claude Pricing Update
 
 Pricing is auto-fetched from [Anthropic's pricing page](https://docs.anthropic.com/en/docs/about-claude/pricing) on every startup (5s timeout, falls back to cached). Supports all current Claude models including Opus, Sonnet, and Haiku variants with cache pricing.
 
@@ -257,7 +256,7 @@ claudeoo/
 
 ## Acknowledgements
 
-Inspired by [cccost](https://github.com/badlogic/cccost/tree/main) by Mario Zechner — the original `fetch()` interception approach for tracking Claude Code costs. claudeoo builds on that idea with auto-updated pricing, SQLite storage, per-turn granularity, content type tracking, and a query CLI.
+Inspired by [cccost](https://github.com/badlogic/cccost/tree/main) by Mario Zechner
 
 ---
 
