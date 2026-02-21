@@ -1,0 +1,43 @@
+{
+  "name": "claudeoo",
+  "version": "0.1.0",
+  "description": "Accurate token usage & cost tracker for Claude Code — real-time cost tracking, per-turn breakdowns, and session reports",
+  "license": "MIT",
+  "author": "stoic",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stoic/claudeoo"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "anthropic",
+    "token-tracker",
+    "cost-tracker",
+    "usage",
+    "cli",
+    "api-monitor"
+  ],
+  "bin": {
+    "claudeoo": "dist/cli.js"
+  },
+  "main": "dist/cli.js",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc && cp src/pricing.json src/interceptor-loader.js dist/",
+    "dev": "tsx src/cli.ts",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}
