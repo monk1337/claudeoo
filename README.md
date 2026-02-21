@@ -31,7 +31,10 @@
   </p>
 </div>
 
----
+<div align="center">
+  <img src="screenshots/summary.png" alt="claudeoo session summary" width="600">
+</div>
+
 
 ## Why claudeoo?
 
