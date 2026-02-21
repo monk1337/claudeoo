@@ -5,6 +5,7 @@ const c = {
   reset: "\x1b[0m",
   bold: "\x1b[1m",
   dim: "\x1b[2m",
+  italic: "\x1b[3m",
   red: "\x1b[31m",
   green: "\x1b[32m",
   yellow: "\x1b[33m",
@@ -13,6 +14,11 @@ const c = {
   cyan: "\x1b[36m",
   white: "\x1b[37m",
   gray: "\x1b[90m",
+  // 256-color palette for matching the reference style
+  dustyPink: "\x1b[38;5;139m",     // soft pink/lavender for greeting
+  steel: "\x1b[38;5;103m",         // muted blue-gray for labels
+  brightWhite: "\x1b[1;97m",       // bold bright white for section headers
+  dimGray: "\x1b[38;5;243m",       // dim gray for sub-items
 };
 
 export function bold(s: string): string {
@@ -63,7 +69,66 @@ export function fmtTokens(n: number): string {
   return n.toString();
 }
 
-/** Box-drawing session summary printed on exit */
+/** Column where values start (wider gap to match reference) */
+const COL = 28;
+
+/** Format a label-value row: steel-blue bold label, white value */
+function row(label: string, value: string): string {
+  return `  ${c.steel}${c.bold}${padRight(label, COL)}${c.reset}${value}`;
+}
+
+/** Format a sub-item row: dim gray » label, then value */
+function subRow(label: string, value: string): string {
+  return `  ${c.dimGray}  \u00BB ${padRight(label, COL - 4)}${c.reset}${value}`;
+}
+
+/** Format a section header: bold bright white */
+function section(title: string): string {
+  return `  ${c.brightWhite}${title}${c.reset}`;
+}
+
+/** Friendly model display name: claude-opus-4-6-20250610 → Opus 4.6 */
+function displayModelName(model: string): string {
+  const base = model.replace(/-\d{8}$/, "");
+  if (base.includes("opus-4-6")) return "Opus 4.6";
+  if (base.includes("opus-4-5")) return "Opus 4.5";
+  if (base.includes("sonnet-4-6")) return "Sonnet 4.6";
+  if (base.includes("sonnet-4-5")) return "Sonnet 4.5";
+  if (base.includes("sonnet-4")) return "Sonnet 4";
+  if (base.includes("haiku-4-5")) return "Haiku 4.5";
+  if (base.includes("haiku-3-5")) return "Haiku 3.5";
+  return base.replace("claude-", "");
+}
+
+/** Strip ANSI escape codes to get visible character count */
+function visibleLen(s: string): number {
+  return s.replace(/\x1b\[[0-9;]*m/g, "").length;
+}
+
+/** Wrap content lines in a dim border box */
+function wrapInBox(contentLines: string[]): string[] {
+  // Find the widest visible line to size the box
+  let maxWidth = 0;
+  for (const line of contentLines) {
+    const vl = visibleLen(line);
+    if (vl > maxWidth) maxWidth = vl;
+  }
+  // Add padding on each side
+  const innerWidth = maxWidth + 4;
+  const border = c.dimGray;
+  const r = c.reset;
+
+  const out: string[] = [];
+  out.push(`${border}\u250C${"─".repeat(innerWidth)}\u2510${r}`);
+  for (const line of contentLines) {
+    const pad = innerWidth - visibleLen(line) - 2;
+    out.push(`${border}\u2502${r} ${line}${" ".repeat(Math.max(0, pad))} ${border}\u2502${r}`);
+  }
+  out.push(`${border}\u2514${"─".repeat(innerWidth)}\u2518${r}`);
+  return out;
+}
+
+/** Session summary printed on exit — matches Claude's exit summary style */
 export function formatSessionSummary(
   records: ApiCallRecord[],
   sessionId: string,
@@ -76,38 +141,57 @@ export function formatSessionSummary(
   let totalCacheWrite = 0;
   let totalCacheRead = 0;
   let totalCost = 0;
-  let totalThinking = 0;
-  let totalText = 0;
-  let totalToolUse = 0;
 
+  const modelCounts: Record<string, number> = {};
   for (const r of records) {
     totalInput += r.input_tokens;
     totalOutput += r.output_tokens;
     totalCacheWrite += r.cache_creation_input_tokens;
     totalCacheRead += r.cache_read_input_tokens;
     totalCost += r.cost_usd;
-    totalThinking += r.thinking_chars;
-    totalText += r.text_chars;
-    totalToolUse += r.tool_use_chars;
+    const mName = displayModelName(r.model);
+    modelCounts[mName] = (modelCounts[mName] || 0) + 1;
   }
 
   const mins = Math.floor(durationSecs / 60);
   const secs = Math.floor(durationSecs % 60);
   const duration = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
 
-  const lines: string[] = [];
-  lines.push("");
-  lines.push(`${c.cyan}╭─────────────────────────────────────────────╮${c.reset}`);
-  lines.push(`${c.cyan}│${c.reset} ${c.bold}claudeoo${c.reset} session summary                    ${c.cyan}│${c.reset}`);
-  lines.push(`${c.cyan}├─────────────────────────────────────────────┤${c.reset}`);
-  lines.push(`${c.cyan}│${c.reset} API calls:  ${padRight(fmtNum(records.length), 14)} Duration: ${padRight(duration, 8)}${c.cyan}│${c.reset}`);
-  lines.push(`${c.cyan}│${c.reset} Input:      ${padRight(fmtTokens(totalInput), 14)} Cache W: ${padRight(fmtTokens(totalCacheWrite), 9)}${c.cyan}│${c.reset}`);
-  lines.push(`${c.cyan}│${c.reset} Output:     ${padRight(fmtTokens(totalOutput), 14)} Cache R: ${padRight(fmtTokens(totalCacheRead), 9)}${c.cyan}│${c.reset}`);
-  lines.push(`${c.cyan}├─────────────────────────────────────────────┤${c.reset}`);
-  lines.push(`${c.cyan}│${c.reset} ${c.bold}Total cost: ${green(fmtCost(totalCost))}${padRight("", 45 - 14 - fmtCost(totalCost).length)}${c.cyan}│${c.reset}`);
-  lines.push(`${c.cyan}╰─────────────────────────────────────────────╯${c.reset}`);
+  // Primary model (most calls)
+  const primaryModel = Object.entries(modelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "unknown";
 
-  return lines.join("\n");
+  // Build content lines (no border yet)
+  const content: string[] = [];
+
+  // Greeting — dusty pink, italic
+  content.push("");
+  content.push(`${c.italic}${c.dustyPink}Session complete. Goodbye!${c.reset}`);
+  content.push("");
+
+  // Session Summary
+  content.push(section("Session Summary"));
+  content.push(row("Session ID:", sessionId));
+  content.push(row("API Calls:", fmtNum(records.length)));
+  content.push(row("Model:", primaryModel));
+  content.push("");
+
+  // Tokens
+  content.push(section("Tokens"));
+  content.push(row("Input:", fmtTokens(totalInput)));
+  content.push(row("Output:", fmtTokens(totalOutput)));
+  content.push(subRow("Cache Write:", fmtTokens(totalCacheWrite)));
+  content.push(subRow("Cache Read:", fmtTokens(totalCacheRead)));
+  content.push("");
+
+  // Cost
+  content.push(section("Cost"));
+  content.push(row("Total:", `${c.green}${fmtCost(totalCost)}${c.reset}`));
+  content.push(row("Duration:", duration));
+  content.push("");
+
+  // Wrap in border box
+  const boxed = wrapInBox(content);
+  return "\n" + boxed.join("\n");
 }
 
 function padRight(s: string, len: number): string {

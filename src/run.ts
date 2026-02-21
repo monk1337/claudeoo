@@ -218,16 +218,34 @@ export function runClaude(claudeArgs: string[], verbose: boolean, noDb: boolean)
 
   const sessionId = crypto.randomUUID();
 
-  // Determine the interceptor loader path
+  // Determine the interceptor loader path.
+  // Copy the loader + interceptor to a temp dir so that Node's --require
+  // doesn't resolve through npm-link symlinks back to the claudeoo project
+  // directory (which would make Claude think it's in the wrong folder).
   let loaderPath = path.join(__dirname, "interceptor-loader.js");
   if (!fs.existsSync(loaderPath)) {
     loaderPath = path.join(path.dirname(__dirname), "src", "interceptor-loader.js");
   }
+  const tmpDir = path.join(
+    process.env.HOME || process.env.USERPROFILE || "/tmp",
+    ".claudeoo",
+    "tmp"
+  );
+  fs.mkdirSync(tmpDir, { recursive: true });
+  const srcDir = path.dirname(loaderPath);
+  // Copy all needed files to temp dir (breaks symlink chain)
+  for (const file of fs.readdirSync(srcDir)) {
+    if (file.endsWith(".js") || file.endsWith(".json")) {
+      fs.copyFileSync(path.join(srcDir, file), path.join(tmpDir, file));
+    }
+  }
+  loaderPath = path.join(tmpDir, "interceptor-loader.js");
 
   if (verbose) {
     process.stderr.write(`[claudeoo] Claude: ${claude.type} @ ${claude.path}\n`);
     process.stderr.write(`[claudeoo] Session: ${sessionId}\n`);
     process.stderr.write(`[claudeoo] Loader: ${loaderPath}\n`);
+    process.stderr.write(`[claudeoo] CWD: ${process.cwd()}\n`);
   }
 
   const startTime = Date.now();
@@ -252,7 +270,7 @@ export function runClaude(claudeArgs: string[], verbose: boolean, noDb: boolean)
     child = spawn(
       process.execPath, // node
       ["--require", loaderPath, claude.path, ...claudeArgs],
-      { stdio: "inherit", env }
+      { stdio: "inherit", env, cwd: process.cwd() }
     );
   } else {
     // Mode 2: binary — run directly, read JSONL afterward
@@ -264,7 +282,7 @@ export function runClaude(claudeArgs: string[], verbose: boolean, noDb: boolean)
     // Unset CLAUDECODE to avoid "nested session" check
     delete (env as Record<string, string | undefined>).CLAUDECODE;
 
-    child = spawn(claude.path, claudeArgs, { stdio: "inherit", env });
+    child = spawn(claude.path, claudeArgs, { stdio: "inherit", env, cwd: process.cwd() });
   }
 
   child.on("exit", (code, signal) => {

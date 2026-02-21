@@ -1,8 +1,50 @@
-# claudeoo
+<div align="center">
+  <div align="center">
+    <img width="220px" src="screenshots/logo.png" alt="claudeoo logo">
+  </div>
 
-Accurate token usage & cost tracker for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
+  <p>
+    Accurate token usage & cost tracker for
+    <a href="https://docs.anthropic.com/en/docs/claude-code">Claude Code</a>.<br>
+    Claude Code's built-in tracking undercounts output tokens by ~2x —
+    <b>claudeoo</b> captures the real numbers.
+  </p>
 
-Claude Code's built-in usage tracking undercounts output tokens by ~2x because it logs mid-stream SSE snapshots. **claudeoo** intercepts the full API stream and captures the final `message_delta` event — giving you the real numbers.
+  <p>
+    <a href="#why-claudeoo">Why?</a> •
+    <a href="#features">Features</a> •
+    <a href="#installation">Installation</a> •
+    <a href="#usage">Usage</a> •
+    <a href="#how-it-works">How It Works</a> •
+    <a href="#query-commands">Query Commands</a>
+  </p>
+
+  <p>
+    <img src="https://img.shields.io/badge/Node.js-22.5+-339933.svg" alt="Node.js 22.5+" />
+    <img src="https://img.shields.io/badge/Zero_Dependencies-lightgrey.svg" alt="Zero Dependencies" />
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License MIT" />
+    <a href="https://www.npmjs.com/package/claudeoo">
+      <img src="https://img.shields.io/npm/v/claudeoo.svg" alt="npm version" />
+    </a>
+    <a href="http://makeapullrequest.com">
+      <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome" />
+    </a>
+  </p>
+</div>
+
+---
+
+## Why claudeoo?
+
+Claude Code logs API calls to JSONL transcripts, but these logs capture usage snapshots **mid-stream** — before the final `message_delta` event arrives. This means:
+
+- **Output tokens are undercounted** by roughly 2x
+- **`stop_reason` is always `null`** in the logs (never captured)
+- **Cache tokens may be incomplete**
+
+claudeoo intercepts the full SSE stream end-to-end and captures the authoritative final usage numbers — so you know exactly what you're spending.
+
+---
 
 ## Features
 
@@ -11,11 +53,13 @@ Claude Code's built-in usage tracking undercounts output tokens by ~2x because i
 - **Per-turn breakdowns** — input, output, cache read/write tokens for every API call
 - **Content type tracking** — thinking, text, and tool_use character counts
 - **Session reports** — detailed JSON reports saved automatically after each session
-- **Full API logs** — optional raw request/response logging for debugging
+- **Full API logs** — raw request/response logging for debugging
 - **Auto-updated pricing** — fetches latest model pricing from Anthropic's docs on every startup
 - **SQLite + JSONL storage** — queryable database with JSONL backup
 - **CLI queries** — stats, sessions, export commands to analyze your usage
 - **Zero runtime dependencies** — uses Node.js built-in `node:sqlite`
+
+---
 
 ## Installation
 
@@ -24,8 +68,23 @@ npm install -g claudeoo
 ```
 
 **Requirements:**
-- Node.js >= 22.5.0 (for built-in `node:sqlite`)
-- Claude Code installed via npm: `npm install -g @anthropic-ai/claude-code`
+
+| Requirement | Version |
+|-------------|---------|
+| Node.js | >= 22.5.0 (for built-in `node:sqlite`) |
+| Claude Code | npm-installed: `npm install -g @anthropic-ai/claude-code` |
+
+### From source
+
+```bash
+git clone https://github.com/stoic/claudeoo.git
+cd claudeoo
+npm install
+npm run build
+npm link
+```
+
+---
 
 ## Usage
 
@@ -45,7 +104,25 @@ claudeoo --dangerously-skip-permissions --model sonnet
 claudeoo --coo-verbose -p "hello"
 ```
 
-### Query Commands
+### Live Tracking
+
+Your terminal tab title updates in real-time during streaming:
+
+```
+[claudeoo] 💰 $0.47 | ↑125K ↓3.2K | turn 5 | ⏳
+```
+
+### Session Summary
+
+After each session ends, you get a clean summary with token counts, cost, and file paths:
+
+<div align="center">
+  <img src="screenshots/summary.png" alt="claudeoo session summary" width="600">
+</div>
+
+---
+
+## Query Commands
 
 ```bash
 # Today's usage stats
@@ -69,55 +146,53 @@ claudeoo export --format json
 claudeoo pricing --show
 ```
 
+---
+
 ## How It Works
 
 claudeoo finds your npm-installed Claude Code (`cli.js`) and launches it with a `node --require` preload that wraps `globalThis.fetch()`. It observes the Anthropic API's SSE stream without modifying it — Claude works exactly as normal.
 
 ```
 claudeoo [args...]
-  -> node --require interceptor-loader.js <claude-cli.js> ...args
-  -> interceptor wraps globalThis.fetch()
-  -> filters /v1/messages calls
-  -> observes SSE stream via Symbol.asyncIterator monkey-patch
-  -> captures message_start (input tokens) + message_delta (output tokens)
-  -> writes to ~/.claudeoo/usage.db + JSONL + session reports
-  -> updates terminal title with live cost
+  → node --require interceptor-loader.js <claude-cli.js> ...args
+  → interceptor wraps globalThis.fetch()
+  → filters /v1/messages calls
+  → observes SSE stream via Symbol.asyncIterator monkey-patch
+  → captures message_start (input tokens) + message_delta (output tokens)
+  → writes to ~/.claudeoo/usage.db + JSONL + session reports
+  → updates terminal title with live cost
 ```
 
 ### What Gets Tracked
 
 Each API call records:
-- Input, output, cache creation, and cache read tokens
-- Thinking, text, and tool_use character counts
-- Model, cost, duration, stop reason
-- Session ID and turn number
 
-### Live Tracking
+| Field | Description |
+|-------|-------------|
+| Input tokens | Prompt tokens sent to the API |
+| Output tokens | Completion tokens (accurate, from final event) |
+| Cache creation | Tokens written to prompt cache |
+| Cache read | Tokens read from prompt cache |
+| Thinking chars | Characters in thinking/reasoning blocks |
+| Text chars | Characters in text response blocks |
+| Tool use chars | Characters in tool_use blocks |
+| Model | Model ID used for the call |
+| Cost | Calculated cost in USD |
+| Duration | Wall-clock time per API call |
+| Stop reason | Why the model stopped (end_turn, tool_use, etc.) |
 
-Your terminal tab title updates in real-time during streaming:
+---
 
-```
-[claudeoo] 💰 $0.47 | ↑125K ↓3.2K | turn 5 | ⏳
-```
+## Flags
 
-### Session Summary
+| Flag | Description |
+|------|-------------|
+| `--coo-verbose` | Real-time per-call logging to stderr |
+| `--coo-no-db` | Skip SQLite, write JSONL only |
 
-After each session ends, you get a summary box plus file paths:
+These flags are consumed by claudeoo and **not** passed to Claude.
 
-```
-╭─────────────────────────────────────────────╮
-│ claudeoo session summary                    │
-├─────────────────────────────────────────────┤
-│ API calls:  12             Duration: 3m 42s │
-│ Input:      1.23M          Cache W: 45.2K   │
-│ Output:     15.6K          Cache R: 890K    │
-├─────────────────────────────────────────────┤
-│ Total cost: $0.847                          │
-╰─────────────────────────────────────────────╯
-
-Session report: ~/.claudeoo/reports/<session-id>.json
-Full API log:   ~/.claudeoo/logs/<session-id>.jsonl
-```
+---
 
 ## Data Storage
 
@@ -135,14 +210,7 @@ All data is stored in `~/.claudeoo/`:
     └── <session-id>.jsonl      # Full API request/response log
 ```
 
-## Flags
-
-| Flag | Description |
-|------|-------------|
-| `--coo-verbose` | Real-time per-call logging to stderr |
-| `--coo-no-db` | Skip SQLite, write JSONL only |
-
-These flags are consumed by claudeoo and not passed to Claude.
+---
 
 ## Pricing
 
@@ -152,16 +220,53 @@ Pricing is auto-fetched from [Anthropic's pricing page](https://docs.anthropic.c
 claudeoo pricing --show
 ```
 
-## Why Not Just Use Claude's Built-in Tracking?
+| Model | Input | Output | Cache Write | Cache Read |
+|-------|-------|--------|-------------|------------|
+| Claude Opus 4.6 | $5.00 | $25.00 | $6.25 | $0.50 |
+| Claude Sonnet 4.6 | $3.00 | $15.00 | $3.75 | $0.30 |
+| Claude Haiku 4.5 | $1.00 | $5.00 | $1.25 | $0.10 |
 
-Claude Code logs API calls to JSONL transcripts, but these logs capture usage snapshots mid-stream — before the final `message_delta` event arrives. This means:
+*Per million tokens. Full pricing in `pricing.json`.*
 
-- **Output tokens are undercounted** by roughly 2x
-- **`stop_reason` is always `null`** in the logs (never captured)
-- **Cache tokens may be incomplete**
+---
 
-claudeoo reads the complete SSE stream end-to-end and captures the authoritative final usage numbers.
+## Project Structure
+
+```
+claudeoo/
+├── package.json                # npm package config
+├── tsconfig.json               # TypeScript config
+└── src/
+    ├── cli.ts                  # Entry point — argument parsing, command routing
+    ├── run.ts                  # Find Claude cli.js, spawn with interception
+    ├── interceptor-loader.js   # CommonJS preload (must stay .js)
+    ├── interceptor.ts          # fetch() wrapper, SSE parser, content block tracker
+    ├── recorder.ts             # Write records to JSONL + SQLite + full logs
+    ├── db.ts                   # SQLite schema, queries for stats/sessions/export
+    ├── pricing.ts              # Model pricing resolver (fuzzy match model IDs)
+    ├── pricing.json            # Shipped default pricing data
+    ├── update-pricing.ts       # Auto-fetch latest pricing from Anthropic docs
+    ├── types.ts                # All TypeScript interfaces
+    ├── format.ts               # Terminal colors, table formatting, session summary
+    ├── stats.ts                # claudeoo stats command
+    ├── sessions.ts             # claudeoo sessions / session <id> commands
+    └── export.ts               # claudeoo export command (CSV/JSON)
+```
+
+---
+
+## Acknowledgements
+
+Inspired by [cccost](https://github.com/badlogic/cccost/tree/main) by Mario Zechner — the original `fetch()` interception approach for tracking Claude Code costs. claudeoo builds on that idea with auto-updated pricing, SQLite storage, per-turn granularity, content type tracking, and a query CLI.
+
+---
 
 ## License
 
 MIT
+
+---
+
+<div align="center">
+  <sub>Built for knowing exactly what Claude Code costs you.</sub>
+</div>
