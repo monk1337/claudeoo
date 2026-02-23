@@ -40,17 +40,17 @@
 
 Claude Code stores session history in `~/.claude/projects/<project>/<session-id>.jsonl`, but these logs **undercount output tokens by ~2x**.
 
-**Why?** Claude streams responses in chunks and logs usage mid-stream. The final `message_delta` event — the one Anthropic actually bills you for — never gets written to disk.
+**Why?** Claude streams responses in chunks and logs usage mid-stream. The final `message_delta` event, the one Anthropic actually bills you for, never gets written to disk.
 
 **Real impact:**  
 A 128-turn Opus session (49 min) shows:
 - JSONL logs: **23,725** output tokens
 - Actual usage: **45,050** output tokens  
-- **Gap: ~$0.47/session** — adds up fast for power users
+- **Gap: ~$0.47/session** adds up fast for power users
 
 No `stop_reason`, incomplete cache tokens, no way to reconcile costs against your Anthropic bill.
 
-**The fix:** claudeoo intercepts the live SSE stream and captures the final usage event — the same numbers Anthropic bills you for.
+**The fix:** claudeoo intercepts the live SSE stream and captures the final usage event, the same numbers Anthropic bills you for.
 
 ## Features
 
@@ -139,7 +139,7 @@ No `stop_reason`, incomplete cache tokens, no way to reconcile costs against you
   </tbody>
   </table>
 
-  > \*ccusage reads Claude's built-in JSONL logs which capture usage snapshots mid-stream — before the final `message_delta` arrives — resulting in undercounted output tokens.
+  > \*ccusage reads Claude's built-in JSONL logs which capture usage snapshots mid-stream, before the final `message_delta` arrives, resulting in undercounted output tokens.
 
 ---
 
@@ -232,7 +232,7 @@ claudeoo pricing --show
 
 ## How It Works
 
-claudeoo finds your npm-installed Claude Code (`cli.js`) and launches it with a `node --require` preload that wraps `globalThis.fetch()`. It observes the Anthropic API's SSE stream without modifying it — Claude works exactly as normal.
+claudeoo finds your npm-installed Claude Code (`cli.js`) and launches it with a `node --require` preload that wraps `globalThis.fetch()`. It observes the Anthropic API's SSE stream without modifying it, Claude works exactly as normal.
 
 ```
 claudeoo [args...]
@@ -319,7 +319,7 @@ claudeoo/
 ├── package.json                # npm package config
 ├── tsconfig.json               # TypeScript config
 └── src/
-    ├── cli.ts                  # Entry point — argument parsing, command routing
+    ├── cli.ts                  # Entry point, argument parsing, command routing
     ├── run.ts                  # Find Claude cli.js, spawn with interception
     ├── interceptor-loader.js   # CommonJS preload (must stay .js)
     ├── interceptor.ts          # fetch() wrapper, SSE parser, content block tracker
