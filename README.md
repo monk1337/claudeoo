@@ -36,15 +36,21 @@
 </div>
 
 
-## Why claudeoo?
+## The Problem
 
-Claude Code logs API calls to JSONL transcripts, but these logs capture usage snapshots **mid-stream** before the final `message_delta` event arrives. This means:
+Claude Code stores session history in `~/.claude/projects/<project>/<session-id>.jsonl`, but these logs **undercount output tokens by ~2x**.
 
-- **Output tokens are undercounted** by roughly 2x
-- **`stop_reason` is always `null`** in the logs (never captured)
-- **Cache tokens may be incomplete**
+**Why?** Claude streams responses in chunks and logs usage mid-stream. The final `message_delta` event — the one Anthropic actually bills you for — never gets written to disk.
 
-claudeoo intercepts the full SSE stream end-to-end and captures the authoritative final usage numbers so you know exactly what you're spending.
+**Real impact:**  
+A 128-turn Opus session (49 min) shows:
+- JSONL logs: **23,725** output tokens
+- Actual usage: **45,050** output tokens  
+- **Gap: ~$0.47/session** — adds up fast for power users
+
+No `stop_reason`, incomplete cache tokens, no way to reconcile costs against your Anthropic bill.
+
+**The fix:** claudeoo intercepts the live SSE stream and captures the final usage event — the same numbers Anthropic bills you for.
 
 ## Features
 
