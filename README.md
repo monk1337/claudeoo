@@ -337,6 +337,16 @@ claudeoo/
 
 ---
 
+```
+@misc{claudeoo2026,                                                                                                                                                        
+    title        = {claudeoo: Accurate Token Usage and Cost Tracker for Claude Code},                                                                                        
+    author       = {Pal, Ankit},                                                                                                                                             
+    year         = {2026},                                                                                                                                                   
+    howpublished = {\url{https://github.com/monk1337/claudeoo}},                                                                                                             
+    note         = {SSE stream interceptor capturing final \texttt{message\_delta} usage events for billable-accurate token and cost tracking in Claude Code}                
+  }
+```
+
 ## Acknowledgements
 
 Inspired by [cccost](https://github.com/badlogic/cccost/tree/main) by Mario Zechner
@@ -352,3 +362,4 @@ MIT
 <div align="center">
   <sub>Built for knowing exactly what Claude Code costs you.</sub>
 </div>
+
